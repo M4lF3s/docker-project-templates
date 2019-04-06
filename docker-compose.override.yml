@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  
+  https-portal:
+    image: steveltn/https-portal:1.5
+    container_name: https-portal
+    ports:  # Syntax: 'HOST:CONTAINER'
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./volumes/ssl_certs:/var/lib/https-portal
+    links:  # Syntax: service:hostname
+      - example-app:app
+    restart: unless-stopped
+    env_file:
+      - ./env/https-portal.dev.env
+    networks:
+      example-network:
+        ipv4_address: 172.23.2.10
+
+  example-app:
+    build: ./services/example-app
+    # image: Your.Docker.Repository/example-app:1.0
+    container_name: example-app
+    volumes:
+      - ./volumes/example-app:/var/html
+    secrets:
+      - example_secret  # will be mounted under /run/secrets/example_secret
+    networks:
+      example-network:
+        ipv4_address: 172.23.2.20
+    
+
+secrets:
+  example_secret:
+    file: ./secrets/passwordfile
+
+networks:
+  example-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.23.2.0/24
